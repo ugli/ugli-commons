@@ -1,8 +1,11 @@
 package se.ugli.commons;
 
+import java.io.Serializable;
 import java.util.NoSuchElementException;
 
-public class Option<T> {
+public class Option<T> implements Serializable {
+
+	private static final long serialVersionUID = 5493989609477736170L;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static <T> Option<T> apply(final T value) {
@@ -23,17 +26,10 @@ public class Option<T> {
 	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
-		if (obj == null)
+		if (obj == null || getClass() != obj.getClass())
 			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		final Option<?> other = (Option<?>) obj;
-		if (value == null) {
-			if (other.value != null)
-				return false;
-		} else if (!value.equals(other.value))
-			return false;
-		return true;
+		final Option<?> that = (Option<?>) obj;
+		return this.value == null && that.value == null || this.value != null && this.value.equals(that.value);
 	}
 
 	public T get() {
@@ -44,7 +40,7 @@ public class Option<T> {
 
 	public T getOrElse(final T defaultValue) {
 		if (isDefined())
-			return defaultValue;
+			return value;
 		return defaultValue;
 	}
 
@@ -54,10 +50,7 @@ public class Option<T> {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (value == null ? 0 : value.hashCode());
-		return result;
+		return 31 * 1 + (value == null ? 0 : value.hashCode());
 	}
 
 	public boolean isDefined() {
