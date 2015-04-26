@@ -2,10 +2,12 @@ package se.ugli.commons;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -14,63 +16,98 @@ import java.nio.charset.Charset;
 
 public class CopyCommand {
 
-	private final int bufferSize;
+	private static final int DEFAULT_BUFFER_SIZE = 1024;
 
-	private CopyCommand(final int bufferSize) {
-		this.bufferSize = bufferSize;
+	public static CopyCommand apply() {
+		return new CopyCommand(DEFAULT_BUFFER_SIZE);
 	}
 
 	public static CopyCommand apply(final int bufferSize) {
 		return new CopyCommand(bufferSize);
 	}
 
-	public static CopyCommand apply() {
-		return new CopyCommand(1024);
+	private final int bufferSize;
+
+	private CopyCommand(final int bufferSize) {
+		this.bufferSize = bufferSize;
 	}
 
-	public void copy(final ReadableByteChannel readableByteChannel, final WritableByteChannel writableByteChannel) {
+	public void copy(final ReadableByteChannel in, final WritableByteChannel out) {
 		try {
-			final ByteBuffer byteBuffer = ByteBuffer.allocate(bufferSize);
-			while (readableByteChannel.read(byteBuffer) > 0)
-				writableByteChannel.write((ByteBuffer) byteBuffer.flip());
+			final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
+			while (in.read(buffer) > 0)
+				out.write((ByteBuffer) buffer.flip());
 		} catch (final IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public void copy(final InputStream inputStream, final OutputStream outputStream) {
-		ReadableByteChannel readableByteChannel = null;
-		WritableByteChannel writableByteChannel = null;
+	public void copy(final InputStream in, final OutputStream out) {
+		ReadableByteChannel inChannel = null;
+		WritableByteChannel outChannel = null;
 		try {
-			readableByteChannel = Channels.newChannel(new BufferedInputStream(inputStream));
-			writableByteChannel = Channels.newChannel(new BufferedOutputStream(outputStream));
-			copy(readableByteChannel, writableByteChannel);
+			inChannel = Channels.newChannel(new BufferedInputStream(in, bufferSize));
+			outChannel = Channels.newChannel(new BufferedOutputStream(out, bufferSize));
+			copy(inChannel, outChannel);
 		} finally {
-			CloseCommand.execute(readableByteChannel, writableByteChannel);
+			CloseCommand.execute(inChannel, outChannel);
 		}
 	}
 
-	public byte[] copyToBytes(final InputStream inputStream) {
-		ByteArrayOutputStream byteArrayOutputStream = null;
+	public void copy(final Reader in, final Charset charset, final OutputStream out) {
+		copy(toInputStream(in, charset), out);
+	}
+
+	public void copy(final Reader in, final OutputStream out) {
+		copy(in, Charset.defaultCharset(), out);
+	}
+
+	public byte[] copyToBytes(final InputStream in) {
+		ByteArrayOutputStream out = null;
 		try {
-			byteArrayOutputStream = new ByteArrayOutputStream();
-			copy(inputStream, byteArrayOutputStream);
-			return byteArrayOutputStream.toByteArray();
+			out = new ByteArrayOutputStream();
+			copy(in, out);
+			return out.toByteArray();
 		} finally {
-			CloseCommand.execute(byteArrayOutputStream);
+			CloseCommand.execute(out);
 		}
 	}
 
-	public String copyToString(final InputStream inputStream, final String charsetName) {
-		return copyToString(inputStream, Charset.forName(charsetName));
+	public byte[] copyToBytes(final Reader in) {
+		return copyToBytes(in, Charset.defaultCharset());
 	}
 
-	public String copyToString(final InputStream inputStream, final Charset charset) {
-		return new String(copyToBytes(inputStream), charset);
+	public byte[] copyToBytes(final Reader in, final Charset charset) {
+		return copyToBytes(toInputStream(in, charset));
 	}
 
-	public String copyToString(final InputStream inputStream) {
-		return copyToString(inputStream, Charset.defaultCharset());
+	public String copyToString(final InputStream in) {
+		return copyToString(in, Charset.defaultCharset());
+	}
+
+	public String copyToString(final InputStream in, final Charset charset) {
+		return new String(copyToBytes(in), charset);
+	}
+
+	public String copyToString(final Reader in) {
+		return copyToString(in, Charset.defaultCharset(), Charset.defaultCharset());
+	}
+
+	public String copyToString(final Reader in, final Charset inCharset, final Charset outCharset) {
+		return copyToString(toInputStream(in, inCharset), outCharset);
+	}
+
+	private InputStream toInputStream(final Reader reader, final Charset charset) {
+		try {
+			final char[] charBuffer = new char[bufferSize];
+			final StringBuilder builder = new StringBuilder();
+			int numCharsRead;
+			while ((numCharsRead = reader.read(charBuffer, 0, charBuffer.length)) != -1)
+				builder.append(charBuffer, 0, numCharsRead);
+			return new ByteArrayInputStream(builder.toString().getBytes(charset));
+		} catch (final IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

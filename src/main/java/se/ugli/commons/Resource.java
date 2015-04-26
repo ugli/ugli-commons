@@ -113,15 +113,11 @@ public class Resource extends ValueObject<String> {
 	}
 
 	public char[] getChars() {
-		return CopyCommand.apply().copyToString(getInputStream()).toCharArray();
+		return getChars(Charset.defaultCharset());
 	}
 
 	public char[] getChars(final Charset charset) {
 		return CopyCommand.apply().copyToString(getInputStream(), charset).toCharArray();
-	}
-
-	public char[] getChars(final String charsetName) {
-		return CopyCommand.apply().copyToString(getInputStream(), charsetName).toCharArray();
 	}
 
 	public File getFile() {
@@ -129,15 +125,11 @@ public class Resource extends ValueObject<String> {
 	}
 
 	public Reader getReader() {
-		return new InputStreamReader(getInputStream(), Charset.defaultCharset());
+		return getReader(Charset.defaultCharset());
 	}
 
 	public Reader getReader(final Charset charset) {
 		return new InputStreamReader(getInputStream(), charset);
-	}
-
-	public Reader getReader(final String charsetName) {
-		return new InputStreamReader(getInputStream(), Charset.forName(charsetName));
 	}
 
 	public Source getSource() {
@@ -152,15 +144,11 @@ public class Resource extends ValueObject<String> {
 	}
 
 	public String getString() {
-		return CopyCommand.apply().copyToString(getInputStream());
+		return getString(Charset.defaultCharset());
 	}
 
 	public String getString(final Charset charset) {
 		return CopyCommand.apply().copyToString(getInputStream(), charset);
-	}
-
-	public String getString(final String charsetName) {
-		return CopyCommand.apply().copyToString(getInputStream(), charsetName);
 	}
 
 	public URL getUrl() {
