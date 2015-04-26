@@ -1,9 +1,8 @@
 package se.ugli.commons;
 
-import java.io.Serializable;
 import java.util.NoSuchElementException;
 
-public class Option<T> implements Serializable {
+public class Option<T> extends ValueObject<T> {
 
 	private static final long serialVersionUID = 5493989609477736170L;
 
@@ -16,20 +15,8 @@ public class Option<T> implements Serializable {
 		return apply(null);
 	}
 
-	private final T value;
-
 	private Option(final T value) {
-		this.value = value;
-	}
-
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null || getClass() != obj.getClass())
-			return false;
-		final Option<?> that = (Option<?>) obj;
-		return this.value == null && that.value == null || this.value != null && this.value.equals(that.value);
+		super(value);
 	}
 
 	public T get() {
@@ -48,18 +35,8 @@ public class Option<T> implements Serializable {
 		return getOrElse(null);
 	}
 
-	@Override
-	public int hashCode() {
-		return 31 * 1 + (value == null ? 0 : value.hashCode());
-	}
-
 	public boolean isDefined() {
 		return value != null;
-	}
-
-	@Override
-	public String toString() {
-		return "Option [value=" + value + "]";
 	}
 
 }

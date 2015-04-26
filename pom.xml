@@ -6,7 +6,7 @@
 	<artifactId>ugli-commons</artifactId>
 	<packaging>jar</packaging>
 	<name>Ugli Commons</name>
-	<version>1.0.1</version>
+	<version>1.0.2</version>
 	<description>Ugli Commons</description>
 	<url>http://github.com/ugli/ugli-commons</url>
 	<licenses>
@@ -20,7 +20,7 @@
 		<connection>scm:git:git@github.com:ugli/ugli-commons.git</connection>
 		<developerConnection>scm:git:git@github.com:ugli/ugli-commons.git</developerConnection>
 		<url>git@github.com:ugli/ugli-commons.git</url>
-		<tag>ugli-commons-1.0.1</tag>
+		<tag>v1.0.2</tag>
 	</scm>
 	<developers>
 		<developer>
