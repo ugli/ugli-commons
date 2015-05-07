@@ -18,6 +18,10 @@ public class Id extends ValueObject<String> {
 		super(value);
 	}
 
+	public String value() {
+		return value;
+	}
+
 	@Override
 	public String toString() {
 		return value;

@@ -82,7 +82,7 @@ public class Resource extends ValueObject<String> {
 			}
 			return result;
 		} catch (final IOException e) {
-			throw new RuntimeException(e);
+			throw new IoException(e);
 		} finally {
 			CloseCommand.execute(jarFile);
 		}
@@ -139,7 +139,7 @@ public class Resource extends ValueObject<String> {
 	public InputStream getInputStream() {
 		final InputStream stream = getClass().getResourceAsStream(value);
 		if (stream == null)
-			throw new RuntimeException("Resource '" + value + "' not found.");
+			throw new IoException("Resource '" + value + "' not found.");
 		return stream;
 	}
 
@@ -155,7 +155,7 @@ public class Resource extends ValueObject<String> {
 		final URL url = getClass().getResource(value);
 		if (url != null)
 			return url;
-		throw new RuntimeException("Resource '" + value + "' not found.");
+		throw new IoException("Resource '" + value + "' not found.");
 	}
 
 	/**

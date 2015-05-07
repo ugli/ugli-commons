@@ -4,8 +4,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 public class CopyCommandTest {
@@ -17,37 +19,11 @@ public class CopyCommandTest {
 		assertThat(testdata, equalTo(CopyCommand.apply().copyToString(inputStream)));
 	}
 
-	// @Test
-	// public void abc() throws Exception {
-	// final File inFile = new File(
-	// "/Users/frekiv/Dropbox (Ugli)/DAW/projects/opinionen/Vi kommer aldrig fram till vår strand.wav");
-	// final File outFile = new File(
-	// "/Users/frekiv/Dropbox (Ugli)/DAW/projects/opinionen/Vi kommer aldrig fram till vår strand.wav.copy");
-	// if (true) {
-	//
-	// CopyCommand.apply().copy(new FileInputStream(inFile), new
-	// FileOutputStream(outFile));
-	// final long nanoTime = System.nanoTime();
-	// CopyCommand.apply().copy(new FileInputStream(inFile), new
-	// FileOutputStream(outFile));
-	// System.out.println(System.nanoTime() - nanoTime);
-	// }
-	// if (true) {
-	// IOUtils.copy(new FileInputStream(inFile), new FileOutputStream(outFile));
-	// final long nanoTime = System.nanoTime();
-	// IOUtils.copy(new FileInputStream(inFile), new FileOutputStream(outFile));
-	// System.out.println(System.nanoTime() - nanoTime);
-	//
-	// }
-	// {
-	// Runtime.getRuntime().exec(new String[] { "cp", inFile.getAbsolutePath(),
-	// outFile.getAbsolutePath() });
-	// final long nanoTime = System.nanoTime();
-	// Runtime.getRuntime().exec(new String[] { "cp", inFile.getAbsolutePath(),
-	// outFile.getAbsolutePath() });
-	// System.out.println(System.nanoTime() - nanoTime);
-	//
-	// }
-	// }
+	@Test
+	public void shouldCopyLargeXmlFile() throws IOException {
+		final byte[] bytes1 = IOUtils.toByteArray(Resource.apply("/pubmed-example.xml").getInputStream());
+		final byte[] bytes2 = CopyCommand.apply().copyToBytes(Resource.apply("/pubmed-example.xml").getInputStream());
+		assertThat(new String(bytes2), equalTo(new String(bytes1)));
+	}
 
 }

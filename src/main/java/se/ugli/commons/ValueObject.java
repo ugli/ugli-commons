@@ -6,7 +6,7 @@ public abstract class ValueObject<T> implements Serializable {
 
 	private static final long serialVersionUID = -8304815984373703779L;
 
-	public final T value;
+	protected final T value;
 
 	protected ValueObject(final T value) {
 		this.value = value;

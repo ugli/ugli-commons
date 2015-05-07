@@ -1,7 +1,5 @@
 package se.ugli.commons;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,14 +7,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 public class CopyCommand {
 
-	private static final int DEFAULT_BUFFER_SIZE = 1024;
+	private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
 
 	public static CopyCommand apply() {
 		return new CopyCommand(DEFAULT_BUFFER_SIZE);
@@ -34,23 +31,25 @@ public class CopyCommand {
 
 	public void copy(final ReadableByteChannel in, final WritableByteChannel out) {
 		try {
-			final ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
-			while (in.read(buffer) > 0)
-				out.write((ByteBuffer) buffer.flip());
+			final ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+			while (in.read(buffer) != -1 || buffer.position() > 0) {
+				buffer.flip();
+				out.write(buffer);
+				buffer.compact();
+			}
 		} catch (final IOException e) {
-			throw new RuntimeException(e);
+			throw new IoException(e);
 		}
 	}
 
 	public void copy(final InputStream in, final OutputStream out) {
-		ReadableByteChannel inChannel = null;
-		WritableByteChannel outChannel = null;
 		try {
-			inChannel = Channels.newChannel(new BufferedInputStream(in, bufferSize));
-			outChannel = Channels.newChannel(new BufferedOutputStream(out, bufferSize));
-			copy(inChannel, outChannel);
-		} finally {
-			CloseCommand.execute(inChannel, outChannel);
+			final byte[] buffer = new byte[bufferSize];
+			int n = 0;
+			while (-1 != (n = in.read(buffer)))
+				out.write(buffer, 0, n);
+		} catch (final IOException e) {
+			throw new IoException(e);
 		}
 	}
 
@@ -106,7 +105,7 @@ public class CopyCommand {
 				builder.append(charBuffer, 0, numCharsRead);
 			return new ByteArrayInputStream(builder.toString().getBytes(charset));
 		} catch (final IOException e) {
-			throw new RuntimeException(e);
+			throw new IoException(e);
 		}
 	}
 
