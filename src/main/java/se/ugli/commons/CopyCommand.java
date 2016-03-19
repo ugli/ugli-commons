@@ -68,7 +68,7 @@ public class CopyCommand {
 			copy(in, out);
 			return out.toByteArray();
 		} finally {
-			CloseCommand.execute(out);
+			Closeables.close(out);
 		}
 	}
 

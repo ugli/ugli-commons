@@ -84,7 +84,7 @@ public class Resource extends ValueObject<String> {
 		} catch (final IOException e) {
 			throw new IoException(e);
 		} finally {
-			CloseCommand.execute(jarFile);
+			Closeables.close(jarFile);
 		}
 	}
 
