@@ -3,7 +3,7 @@ package se.ugli.commons;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class ValueObject<T> implements Serializable {
+public class ValueObject<T extends Serializable> implements Serializable {
 
     private static final long serialVersionUID = -8304815984373703779L;
 

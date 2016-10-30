@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -21,150 +22,147 @@ import javax.xml.transform.stream.StreamSource;
 
 public class Resource extends ValueObject<String> {
 
-	private static final long serialVersionUID = 5702359943213375547L;
+    private static final long serialVersionUID = 5702359943213375547L;
 
-	public static Resource apply(final String value) {
-		return new Resource(value);
-	}
+    public static Resource apply(final String value) {
+        return new Resource(value);
+    }
 
-	public static Resource applyClassName(final String className) {
-		return new Resource("/" + className.replace('.', '/') + ".class");
-	}
+    public static Resource applyClassName(final String className) {
+        return new Resource("/" + className.replace('.', '/') + ".class");
+    }
 
-	public static boolean classExists(final String className) {
-		return applyClassName(className).exists();
-	}
+    public static boolean classExists(final String className) {
+        return applyClassName(className).exists();
+    }
 
-	public static Iterable<Resource> applyDir(final String resourceDir) {
-		return applyDir(resourceDir, null);
-	}
+    public static Iterable<Resource> applyDir(final String resourceDir) {
+        return applyDir(resourceDir, null);
+    }
 
-	public static Iterable<Resource> applyDir(final String resourceDir, final String resourcePattern) {
-		final Resource resource = apply(resourceDir);
-		final URL url = resource.getUrl();
-		if ("file".equals(url.getProtocol()))
-			return applyFileDir(resource, resourcePattern);
-		return applyJarDir(url, resourcePattern);
-	}
+    public static Iterable<Resource> applyDir(final String resourceDir, final String resourcePattern) {
+        final Resource resource = apply(resourceDir);
+        final URL url = resource.asUrl();
+        if ("file".equals(url.getProtocol()))
+            return applyFileDir(resource, resourcePattern);
+        return applyJarDir(url, resourcePattern);
+    }
 
-	private static Iterable<Resource> applyFileDir(final Resource resource, final String resourcePattern) {
-		if (resource.isDirectory()) {
-			final List<Resource> result = new LinkedList<Resource>();
-			for (final String childFileName : resource.getFile().list()) {
-				final StringBuilder childPathBuilder = new StringBuilder();
-				childPathBuilder.append(resource.value);
-				if (!resource.value.endsWith("/"))
-					childPathBuilder.append("/");
-				childPathBuilder.append(childFileName);
-				final String childPath = childPathBuilder.toString();
-				if (resourcePattern == null || childPath.matches(resourcePattern))
-					result.add(Resource.apply(childPath));
-			}
-			return result;
-		} else
-			throw new IllegalStateException("This resource isn't a directory: " + resource.value);
-	}
+    private static Iterable<Resource> applyFileDir(final Resource resource, final String resourcePattern) {
+        if (resource.isDirectory()) {
+            final List<Resource> result = new LinkedList<>();
+            for (final String childFileName : resource.asFile().list()) {
+                final StringBuilder childPathBuilder = new StringBuilder();
+                childPathBuilder.append(resource.value);
+                if (!resource.value.endsWith("/"))
+                    childPathBuilder.append("/");
+                childPathBuilder.append(childFileName);
+                final String childPath = childPathBuilder.toString();
+                if (resourcePattern == null || childPath.matches(resourcePattern))
+                    result.add(Resource.apply(childPath));
+            }
+            return result;
+        }
+        throw new IllegalStateException("This resource isn't a directory: " + resource.value);
+    }
 
-	private static Iterable<Resource> applyJarDir(final URL jarUrl, final String resourcePattern) {
-		JarFile jarFile = null;
-		try {
-			final Set<Resource> result = new LinkedHashSet<Resource>();
-			jarFile = getJarFile(jarUrl);
-			final String jarUrlPath = jarUrl.getPath();
-			final String resourcePath = jarUrlPath.substring(jarUrlPath.indexOf("!") + 1);
-			final Enumeration<JarEntry> jarEntries = jarFile.entries();
-			while (jarEntries.hasMoreElements()) {
-				final JarEntry jarEntry = jarEntries.nextElement();
-				final String childPath = "/" + jarEntry.getName();
-				if (childPath.startsWith(resourcePath) && !childPath.endsWith("/")
-						&& (resourcePattern == null || childPath.matches(resourcePattern)))
-					result.add(Resource.apply(childPath));
-			}
-			return result;
-		} catch (final IOException e) {
-			throw new IoException(e);
-		} finally {
-			Closeables.close(jarFile);
-		}
-	}
+    private static Iterable<Resource> applyJarDir(final URL jarUrl, final String resourcePattern) {
+        try (JarFile jarFile = getJarFile(jarUrl)) {
+            final Set<Resource> result = new LinkedHashSet<>();
+            final String jarUrlPath = jarUrl.getPath();
+            final String resourcePath = jarUrlPath.substring(jarUrlPath.indexOf("!") + 1);
+            final Enumeration<JarEntry> jarEntries = jarFile.entries();
+            while (jarEntries.hasMoreElements()) {
+                final JarEntry jarEntry = jarEntries.nextElement();
+                final String childPath = "/" + jarEntry.getName();
+                if (childPath.startsWith(resourcePath) && !childPath.endsWith("/")
+                        && (resourcePattern == null || childPath.matches(resourcePattern)))
+                    result.add(Resource.apply(childPath));
+            }
+            return result;
+        }
+        catch (final IOException e) {
+            throw new IoException(e);
+        }
+    }
 
-	private static JarFile getJarFile(final URL jarURL) throws IOException {
-		final String jarUrlPath = jarURL.getPath();
-		final File jarFile = new File(jarUrlPath.substring("file:".length(), jarUrlPath.indexOf("!")));
-		if (jarFile.exists())
-			return new JarFile(jarFile);
-		throw new FileNotFoundException(jarFile.getAbsolutePath());
-	}
+    private static JarFile getJarFile(final URL jarURL) throws IOException {
+        final String jarUrlPath = jarURL.getPath();
+        final File jarFile = new File(jarUrlPath.substring("file:".length(), jarUrlPath.indexOf("!")));
+        if (jarFile.exists())
+            return new JarFile(jarFile);
+        throw new FileNotFoundException(jarFile.getAbsolutePath());
+    }
 
-	private Resource(final String value) {
-		super(value);
-	}
+    private Resource(final String value) {
+        super(value);
+    }
 
-	public boolean exists() {
-		return getClass().getResource(value) != null;
-	}
+    public boolean exists() {
+        return getClass().getResource(value) != null;
+    }
 
-	public boolean isDirectory() {
-		return getFile().isDirectory();
-	}
+    public boolean isDirectory() {
+        return asFile().isDirectory();
+    }
 
-	public byte[] getBytes() {
-		return CopyCommand.apply().copyToBytes(getInputStream());
-	}
+    public byte[] asBytes() {
+        return InputStreams.apply().copyToBytes(asInputStream());
+    }
 
-	public char[] getChars() {
-		return getChars(Charset.defaultCharset());
-	}
+    public char[] asChars() {
+        return asChars(Charset.defaultCharset());
+    }
 
-	public char[] getChars(final Charset charset) {
-		return CopyCommand.apply().copyToString(getInputStream(), charset).toCharArray();
-	}
+    public char[] asChars(final Charset charset) {
+        return InputStreams.apply().copyToString(asInputStream(), charset).toCharArray();
+    }
 
-	public File getFile() {
-		return new File(getUrl().getFile());
-	}
+    public File asFile() {
+        return new File(asUrl().getFile());
+    }
 
-	public Reader getReader() {
-		return getReader(Charset.defaultCharset());
-	}
+    public Path asPath() {
+        return asFile().toPath();
+    }
 
-	public Reader getReader(final Charset charset) {
-		return new InputStreamReader(getInputStream(), charset);
-	}
+    public Reader asReader() {
+        return asReader(Charset.defaultCharset());
+    }
 
-	public Source getSource() {
-		return new StreamSource(getInputStream(), value);
-	}
+    public Reader asReader(final Charset charset) {
+        return new InputStreamReader(asInputStream(), charset);
+    }
 
-	public InputStream getInputStream() {
-		final InputStream stream = getClass().getResourceAsStream(value);
-		if (stream == null)
-			throw new IoException("Resource '" + value + "' not found.");
-		return stream;
-	}
+    public Source asSource() {
+        return new StreamSource(asInputStream(), value);
+    }
 
-	public String getString() {
-		return getString(Charset.defaultCharset());
-	}
+    public InputStream asInputStream() {
+        final InputStream stream = getClass().getResourceAsStream(value);
+        if (stream == null)
+            throw new IoException("Resource '" + value + "' not found.");
+        return stream;
+    }
 
-	public String getString(final Charset charset) {
-		return CopyCommand.apply().copyToString(getInputStream(), charset);
-	}
+    public String asString() {
+        return asString(Charset.defaultCharset());
+    }
 
-	public URL getUrl() {
-		final URL url = getClass().getResource(value);
-		if (url != null)
-			return url;
-		throw new IoException("Resource '" + value + "' not found.");
-	}
+    public String asString(final Charset charset) {
+        return InputStreams.apply().copyToString(asInputStream(), charset);
+    }
 
-	/**
-	 * @deprecated use getString()
-	 */
-	@Override
-	@Deprecated
-	public String toString() {
-		return getString();
-	}
+    public URL asUrl() {
+        final URL url = getClass().getResource(value);
+        if (url != null)
+            return url;
+        throw new IoException("Resource '" + value + "' not found.");
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
 
 }
