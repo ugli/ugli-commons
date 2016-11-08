@@ -1,4 +1,4 @@
-package se.ugli.commons;
+package se.ugli.java.io;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -9,6 +9,9 @@ import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
+
+import se.ugli.java.io.InputStreams;
+import se.ugli.java.io.Resource;
 
 public class InputStreamsTest {
 

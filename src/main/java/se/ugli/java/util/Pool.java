@@ -1,4 +1,4 @@
-package se.ugli.commons.pool;
+package se.ugli.java.util;
 
 import java.io.Closeable;
 import java.util.function.Consumer;

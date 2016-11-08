@@ -1,12 +1,11 @@
-package se.ugli.commons;
+package se.ugli.java.lang;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 public class ValueObject<T extends Serializable> implements Serializable {
 
-    private static final long serialVersionUID = -8304815984373703779L;
-
+    private static final long serialVersionUID = -8029278818258881658L;
     public final T value;
 
     public ValueObject(final T value) {
@@ -15,7 +14,9 @@ public class ValueObject<T extends Serializable> implements Serializable {
 
     @Override
     public boolean equals(final Object obj) {
-        return Objects.deepEquals(obj, this);
+        if (obj != null && obj.getClass().isAssignableFrom(getClass()))
+            return Objects.deepEquals(this.value, ((ValueObject<?>) obj).value);
+        return false;
     }
 
     @Override
@@ -25,7 +26,7 @@ public class ValueObject<T extends Serializable> implements Serializable {
 
     @Override
     public String toString() {
-        return String.valueOf(value);
+        return getClass().getSimpleName() + " [value=" + value + "]";
     }
 
 }

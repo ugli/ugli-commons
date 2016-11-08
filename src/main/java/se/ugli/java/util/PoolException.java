@@ -1,4 +1,4 @@
-package se.ugli.commons.pool;
+package se.ugli.java.util;
 
 public class PoolException extends RuntimeException {
 

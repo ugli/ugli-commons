@@ -1,4 +1,4 @@
-package se.ugli.commons;
+package se.ugli.java.io;
 
 import java.io.IOException;
 

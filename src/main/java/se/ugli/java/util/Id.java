@@ -1,10 +1,12 @@
-package se.ugli.commons;
+package se.ugli.java.util;
 
 import java.util.UUID;
 
+import se.ugli.java.lang.ValueObject;
+
 public class Id extends ValueObject<String> {
 
-    private static final long serialVersionUID = -2963877918811034926L;
+    private static final long serialVersionUID = -576487949652181350L;
 
     private Id(final String value) {
         super(value);

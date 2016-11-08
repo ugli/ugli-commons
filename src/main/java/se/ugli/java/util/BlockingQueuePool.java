@@ -1,4 +1,4 @@
-package se.ugli.commons.pool;
+package se.ugli.java.util;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
