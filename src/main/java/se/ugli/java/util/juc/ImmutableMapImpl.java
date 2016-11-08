@@ -1,5 +1,6 @@
 package se.ugli.java.util.juc;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static se.ugli.java.util.stream.Collectors.toImmutableList;
 import static se.ugli.java.util.stream.Collectors.toImmutableSet;
@@ -45,6 +46,11 @@ public class ImmutableMapImpl<K, V> extends ImmutableSetImpl<MapEntry<K, V>> imp
     @Override
     public ImmutableCollection<V> values() {
         return map.values().stream().collect(toImmutableList());
+    }
+
+    @Override
+    public String toString() {
+        return "Map(" + stream().map(Object::toString).collect(joining(",")) + ")";
     }
 
 }

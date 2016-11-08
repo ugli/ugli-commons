@@ -1,5 +1,7 @@
 package se.ugli.java.util.juc;
 
+import static java.util.stream.Collectors.joining;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,7 +69,7 @@ public class ImmutableSetImpl<E> implements ImmutableSet<E> {
 
     @Override
     public String toString() {
-        return set.toString();
+        return "Set(" + stream().map(e -> e == null ? "null" : e.toString()).collect(joining(",")) + ")";
     }
 
 }

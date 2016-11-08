@@ -1,6 +1,7 @@
 package se.ugli.java.util.juc;
 
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -89,7 +90,7 @@ public class ImmutableListImpl<E> implements ImmutableList<E> {
 
     @Override
     public String toString() {
-        return list.toString();
+        return "List(" + stream().map(e -> e == null ? "null" : e.toString()).collect(joining(",")) + ")";
     }
 
 }

@@ -35,7 +35,7 @@ public class MapEntry<K, V> implements Serializable {
 
     @Override
     public String toString() {
-        return "MapEntry [key=" + key + ", value=" + value + "]";
+        return key == null ? "null" : key.toString() + "->" + value;
     }
 
 }
