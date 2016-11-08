@@ -1,11 +1,13 @@
 package se.ugli.java.util.juc;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
 import se.ugli.java.util.ImmutableSet;
+import se.ugli.java.util.Iterables;
 
 public class ImmutableSetImpl<E> implements ImmutableSet<E> {
 
@@ -49,6 +51,23 @@ public class ImmutableSetImpl<E> implements ImmutableSet<E> {
     @Override
     public Collection<E> toCollection() {
         return Collections.unmodifiableSet(set);
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj instanceof Iterable)
+            return Arrays.equals(toArray(), Iterables.toCollection((Iterable<?>) obj).toArray());
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return set.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return set.toString();
     }
 
 }
