@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -49,25 +48,16 @@ public class Collectors {
 
     public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
             final Function<? super T, ? extends K> keyMapper, final Function<? super T, ? extends V> valueMapper) {
-        return toImmutableMap(keyMapper, valueMapper, (u, v) -> {
-            throw new IllegalStateException(String.format("Duplicate key %s", u));
-        }, HashMap::new, map -> new ImmutableMapImpl<>(map));
+        return toImmutableMap(keyMapper, valueMapper, HashMap::new, map -> new ImmutableMapImpl<>(map));
     }
 
     public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
             final Function<? super T, ? extends K> keyMapper, final Function<? super T, ? extends V> valueMapper,
-            final BinaryOperator<V> mergeFunction) {
-        return toImmutableMap(keyMapper, valueMapper, mergeFunction, HashMap::new, map -> new ImmutableMapImpl<>(map));
-    }
-
-    public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
-            final Function<? super T, ? extends K> keyMapper, final Function<? super T, ? extends V> valueMapper,
-            final BinaryOperator<V> mergeFunction, final Supplier<Map<K, V>> mutableMapFactory,
+            final Supplier<Map<K, V>> mutableMapFactory,
             final Function<Map<K, V>, ImmutableMap<K, V>> immutableMapFactory) {
         return Collector.of(mutableMapFactory,
-                (map, element) -> map.merge(keyMapper.apply(element), valueMapper.apply(element), mergeFunction),
-                (m1, m2) -> {
-                    m2.entrySet().forEach(e -> m1.merge(e.getKey(), e.getValue(), mergeFunction));
+                (map, element) -> map.put(keyMapper.apply(element), valueMapper.apply(element)), (m1, m2) -> {
+                    m1.putAll(m2);
                     return m1;
                 }, immutableMapFactory);
     }
