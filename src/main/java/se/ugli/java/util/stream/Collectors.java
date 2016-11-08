@@ -40,24 +40,24 @@ public class Collectors {
     }
 
     public static <T> Collector<T, ?, ImmutableList<T>> toImmutableList() {
-        return toImmutableList(ArrayList::new, ImmutableListImpl::new);
+        return toImmutableList(ArrayList::new, list -> new ImmutableListImpl<>(list));
     }
 
     public static <T> Collector<T, ?, ImmutableSet<T>> toImmutableSet() {
-        return toImmutableSet(HashSet::new, ImmutableSetImpl::new);
+        return toImmutableSet(HashSet::new, set -> new ImmutableSetImpl<>(set));
     }
 
     public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
             final Function<? super T, ? extends K> keyMapper, final Function<? super T, ? extends V> valueMapper) {
         return toImmutableMap(keyMapper, valueMapper, (u, v) -> {
             throw new IllegalStateException(String.format("Duplicate key %s", u));
-        }, HashMap::new, ImmutableMapImpl::new);
+        }, HashMap::new, map -> new ImmutableMapImpl<>(map));
     }
 
     public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
             final Function<? super T, ? extends K> keyMapper, final Function<? super T, ? extends V> valueMapper,
             final BinaryOperator<V> mergeFunction) {
-        return toImmutableMap(keyMapper, valueMapper, mergeFunction, HashMap::new, ImmutableMapImpl::new);
+        return toImmutableMap(keyMapper, valueMapper, mergeFunction, HashMap::new, map -> new ImmutableMapImpl<>(map));
     }
 
     public static <T, K, V> Collector<T, ?, ImmutableMap<K, V>> toImmutableMap(
@@ -74,27 +74,17 @@ public class Collectors {
 
     public static <T, K> Collector<T, ?, ImmutableMap<K, ImmutableList<T>>> groupingBy(
             final Function<? super T, ? extends K> classifier) {
-        return groupingBy(classifier, ArrayList::new, ImmutableListImpl::new, HashMap::new, HashMap::new,
-                ImmutableMapImpl::new);
-    }
-
-    public static <T, K> Collector<T, ?, ImmutableMap<K, ImmutableList<T>>> groupingBy(
-            final Function<? super T, ? extends K> classifier, final Supplier<List<T>> mutableListFactory,
-            final Function<List<T>, ImmutableList<T>> immutableListFactory,
-            final Supplier<Map<K, List<T>>> mutableContainerFactory,
-            final Supplier<Map<K, ImmutableList<T>>> mutableMapFactory,
-            final Function<Map<K, ImmutableList<T>>, ImmutableMap<K, ImmutableList<T>>> immutableMapFactory) {
-        return Collector.of(mutableContainerFactory, (m, t) -> {
-            m.computeIfAbsent(classifier.apply(t), k -> mutableListFactory.get()).add(t);
+        return Collector.of((Supplier<Map<K, List<T>>>) HashMap::new, (m, t) -> {
+            m.computeIfAbsent(classifier.apply(t), k -> new ArrayList<>()).add(t);
         }, (m1, m2) -> {
             m2.entrySet().forEach(e -> {
-                m1.computeIfAbsent(e.getKey(), k -> mutableListFactory.get()).addAll(e.getValue());
+                m1.computeIfAbsent(e.getKey(), k -> new ArrayList<>()).addAll(e.getValue());
             });
             return m1;
         }, map -> {
-            final Map<K, ImmutableList<T>> newMap = mutableMapFactory.get();
-            map.entrySet().forEach(e -> newMap.put(e.getKey(), immutableListFactory.apply(e.getValue())));
-            return immutableMapFactory.apply(newMap);
+            final Map<K, ImmutableList<T>> newMap = new HashMap<>();
+            map.entrySet().forEach(e -> newMap.put(e.getKey(), new ImmutableListImpl<>(e.getValue())));
+            return new ImmutableMapImpl<>(newMap);
         });
     }
 

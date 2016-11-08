@@ -13,7 +13,6 @@ import org.junit.Test;
 import se.ugli.java.util.ImmutableList;
 import se.ugli.java.util.ImmutableMap;
 import se.ugli.java.util.ImmutableSet;
-import se.ugli.java.util.stream.Collectors;
 
 public class ImmutableCollectorsTest {
 
