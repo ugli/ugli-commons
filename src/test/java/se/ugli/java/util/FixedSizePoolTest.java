@@ -12,14 +12,18 @@ public class FixedSizePoolTest {
 
     @Test
     public void shouldPoolStuff() {
-        try (Pool<Stuff> pool = Pool.builder(() -> new Stuff()).build()) {
-            final List<Integer> list = new ArrayList<>();
-            try (Stuff stuff = pool.borrow()) {
-                assertThat(stuff.getInt(), is(5));
-                stuff.add(list);
-                assertThat(list.size(), is(1));
-            }
+        final Pool<Stuff> pool = Pool.builder(() -> new Stuff()).build();
+        assertThat(pool.size(), is(10));
+        final List<Integer> list = new ArrayList<>();
+        try (Stuff stuff = pool.borrow()) {
+            assertThat(pool.size(), is(9));
+            assertThat(stuff.getInt(), is(5));
+            stuff.add(list);
+            assertThat(list.size(), is(1));
         }
+        assertThat(pool.size(), is(10));
+        pool.close();
+        assertThat(pool.size(), is(0));
     }
 
     static class Stuff implements AutoCloseable {
