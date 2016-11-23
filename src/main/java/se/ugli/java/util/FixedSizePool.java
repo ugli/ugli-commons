@@ -4,20 +4,27 @@ import static net.bytebuddy.matcher.ElementMatchers.isDeclaredBy;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
 
-class BlockingQueueObjectPool<T> implements ObjectPool<T> {
+class FixedSizePool<T extends AutoCloseable> implements Pool<T> {
 
+    private static final Logger logger = LoggerFactory.getLogger(FixedSizePool.class);
     private final BlockingQueue<T> queue;
     private final long checkoutTimeout;
     private final TimeUnit checkoutTimeoutUnit;
 
-    BlockingQueueObjectPool(final BlockingQueue<T> queue, final Supplier<T> objectFactory, final long checkoutTimeout,
+    FixedSizePool(final BlockingQueue<T> queue, final Supplier<T> objectFactory, final long checkoutTimeout,
             final TimeUnit checkoutTimeoutUnit) {
         this.queue = queue;
         this.checkoutTimeout = checkoutTimeout;
@@ -27,18 +34,34 @@ class BlockingQueueObjectPool<T> implements ObjectPool<T> {
     }
 
     @Override
+    public int size() {
+        return queue.size();
+    }
+
+    @Override
     public void close() {
-        final T pooledOject = queue.poll();
-        while (pooledOject != null)
-            if (pooledOject instanceof AutoCloseable) {
-                final AutoCloseable closeable = (AutoCloseable) pooledOject;
-                try {
-                    closeable.close();
-                }
-                catch (final Exception e) {
-                    e.printStackTrace();
-                }
+        final List<T> list = new ArrayList<>(size());
+        queue.drainTo(list);
+        list.stream().forEach(object -> {
+            try {
+                object.close();
             }
+            catch (final Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+        });
+    }
+
+    @Override
+    public void borrow(final Consumer<T> lender) {
+        try {
+            final T loan = queue.poll(checkoutTimeout, checkoutTimeoutUnit);
+            lender.accept(loan);
+            queue.offer(loan);
+        }
+        catch (final InterruptedException e) {
+            throw new PoolException(e);
+        }
     }
 
     @Override
@@ -55,7 +78,7 @@ class BlockingQueueObjectPool<T> implements ObjectPool<T> {
     private T proxy(final T object) {
         try {
             return (T) new ByteBuddy().subclass(object.getClass()).method(isDeclaredBy(object.getClass()))
-                    .intercept(InvocationHandlerAdapter.of(new PooledObjectInvocationHandler(object))).make()
+                    .intercept(InvocationHandlerAdapter.of(new ProxyInvocationHandler(object))).make()
                     .load(object.getClass().getClassLoader()).getLoaded().newInstance();
         }
         catch (InstantiationException | IllegalAccessException e) {
@@ -64,22 +87,21 @@ class BlockingQueueObjectPool<T> implements ObjectPool<T> {
 
     }
 
-    private class PooledObjectInvocationHandler implements InvocationHandler {
+    private class ProxyInvocationHandler implements InvocationHandler {
 
-        private final T pooledObject;
+        private final T object;
 
-        public PooledObjectInvocationHandler(final T pooledObject) {
-            this.pooledObject = pooledObject;
+        ProxyInvocationHandler(final T object) {
+            this.object = object;
         }
 
         @Override
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            if (method.getName().equals("close") && method.getParameterTypes().length == 0) {
-                queue.offer(pooledObject);
+            if ("close".equals(method.getName()) && method.getParameterTypes().length == 0) {
+                queue.offer(object);
                 return null;
             }
-            return pooledObject.getClass().getMethod(method.getName(), method.getParameterTypes()).invoke(pooledObject,
-                    args);
+            return object.getClass().getMethod(method.getName(), method.getParameterTypes()).invoke(object, args);
         }
 
     }
