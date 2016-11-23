@@ -1,8 +1,8 @@
 package se.ugli.java.util;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 import java.io.Closeable;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -26,15 +26,14 @@ public interface Pool<T extends AutoCloseable> extends Closeable {
         private final Supplier<T> objectFactory;
         private final long checkoutTimeout = 10;
         private final int capacity = 10;
-        private final BlockingQueue<T> queue = new ArrayBlockingQueue<>(capacity);
-        private final TimeUnit checkoutTimeoutUnit = TimeUnit.MILLISECONDS;
+        private final TimeUnit checkoutTimeoutUnit = MILLISECONDS;
 
         private PoolBuilder(final Supplier<T> objectFactory) {
             this.objectFactory = objectFactory;
         }
 
         public Pool<T> build() {
-            return new FixedSizePool<>(queue, objectFactory, checkoutTimeout, checkoutTimeoutUnit);
+            return new FixedSizePool<>(capacity, objectFactory, checkoutTimeout, checkoutTimeoutUnit);
         }
     }
 

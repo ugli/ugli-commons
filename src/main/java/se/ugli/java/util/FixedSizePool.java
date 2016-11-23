@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -24,9 +25,8 @@ class FixedSizePool<T extends AutoCloseable> implements Pool<T> {
     private final long checkoutTimeout;
     private final TimeUnit checkoutTimeoutUnit;
 
-    FixedSizePool(final BlockingQueue<T> queue, final Supplier<T> objectFactory, final long checkoutTimeout,
-            final TimeUnit checkoutTimeoutUnit) {
-        this.queue = queue;
+    FixedSizePool(final int capacity, final Supplier<T> objectFactory, final long checkoutTimeout, final TimeUnit checkoutTimeoutUnit) {
+        this.queue = new ArrayBlockingQueue<>(capacity);
         this.checkoutTimeout = checkoutTimeout;
         this.checkoutTimeoutUnit = checkoutTimeoutUnit;
         while (queue.remainingCapacity() > 0)
