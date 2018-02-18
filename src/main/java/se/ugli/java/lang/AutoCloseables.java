@@ -9,7 +9,8 @@ public class AutoCloseables {
 
     public static void safeClose(final AutoCloseable closeable) {
         try {
-            closeable.close();
+            if (closeable != null)
+                closeable.close();
         }
         catch (final Exception e) {
             LOG.warn(e.getMessage(), e);
