@@ -13,7 +13,8 @@ public class AutoCloseables {
         if (closeables != null)
             Stream.of(closeables).forEach(c -> {
                 try {
-                    c.close();
+                    if (c != null)
+                        c.close();
                 }
                 catch (final Exception e) {
                     LOG.warn(e.getMessage(), e);
