@@ -1,7 +1,6 @@
 package se.ugli.java.util.stream;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 import static se.ugli.java.util.stream.Collectors.toImmutableList;
 import static se.ugli.java.util.stream.Collectors.toImmutableMap;
 import static se.ugli.java.util.stream.Collectors.toImmutableSet;
@@ -19,26 +18,26 @@ public class ImmutableCollectorsTest {
     @Test
     public void shouldCollectImmutableList() {
         final ImmutableList<String> list = Stream.of("1", "2").collect(toImmutableList());
-        assertThat(list.size(), is(2));
-        assertThat(list.get(0), is("1"));
-        assertThat(list.get(1), is("2"));
+        assertEquals(list.size(), 2);
+        assertEquals(list.get(0), "1");
+        assertEquals(list.get(1), "2");
     }
 
     @Test
     public void shouldCollectImmutableSet() {
         final ImmutableSet<String> set = Stream.of("1", "2").collect(toImmutableSet());
-        assertThat(set.size(), is(2));
-        assertThat(set.contains("1"), is(true));
-        assertThat(set.contains("2"), is(true));
-        assertThat(set.contains("0"), is(false));
+        assertEquals(set.size(), 2);
+        assertEquals(set.contains("1"), true);
+        assertEquals(set.contains("2"), true);
+        assertEquals(set.contains("0"), false);
     }
 
     @Test
     public void shouldCollectImmutableMap() {
         final ImmutableMap<String, String> map = Stream.of("1", "2").collect(toImmutableMap(s -> s, s -> s + s));
-        assertThat(map.size(), is(2));
-        assertThat(map.get("1").get(), is("11"));
-        assertThat(map.get("2").get(), is("22"));
+        assertEquals(map.size(), 2);
+        assertEquals(map.get("1").get(), "11");
+        assertEquals(map.get("2").get(), "22");
     }
 
     enum NumberClass {
@@ -55,10 +54,10 @@ public class ImmutableCollectorsTest {
                         return NumberClass.POS;
                     return NumberClass.NEG;
                 }));
-        assertThat(collect.size(), is(3));
-        assertThat(collect.get(NumberClass.ZERO).get().size(), is(2));
-        assertThat(collect.get(NumberClass.NEG).get().size(), is(3));
-        assertThat(collect.get(NumberClass.POS).get().size(), is(3));
+        assertEquals(collect.size(), 3);
+        assertEquals(collect.get(NumberClass.ZERO).get().size(), 2);
+        assertEquals(collect.get(NumberClass.NEG).get().size(), 3);
+        assertEquals(collect.get(NumberClass.POS).get().size(), 3);
     }
 
 }
